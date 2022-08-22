@@ -1,0 +1,211 @@
+---
+title: "Comunas_1"
+author: "Renan Magalhães"
+date: "04/05/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
+library(tikzDevice)
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(readxl)
+library(stargazer)
+library(modelsummary)
+library(ggplot2)
+library(wooldridge)
+library(ggcorset)
+library(xtable)
+library(kableExtra)
+```
+
+```{r}
+comunas <- read_excel("Comunas_trabalhando.xlsx", col_names = TRUE)
+```
+
+
+
+```{r}
+comunas_table <- comunas %>%
+  select(Comuna, Tipo, Gama, Pre_N, Post_N) %>%
+  group_by(Comuna) %>%
+  head(39)
+```
+
+```{r}
+comunas_table2 <- comunas %>%
+  group_by(Comuna) %>%
+  select(Comuna, Pre_N, Post_N)
+  
+```
+
+```{r}
+comunas_table %>%
+  kbl(caption = "Table 1") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+```{r}
+comunas_table2 %>%
+  kbl(caption = "Table 2") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+```{r results="asis"}
+model1 <- lm(Change_N ~ Treatment + Post_N + Treatment * Post_N, data = comunas)
+
+
+
+model1a <- stargazer(model1, type = "html")
+
+```
+
+
+```{r}
+ model1 %>%
+  kbl(caption = "Model 1") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+```{r}
+tidy(model1)
+
+```
+
+```{r}
+model2 <- lm(Change_N ~ Treatment + Post_N + Treatment * Post_N + Gama, data = comunas)
+```
+
+
+
+```{r}
+stargazer(model2, 
+          title = "Model 1",
+          type = "text")
+```
+
+```{r}
+model2 %>%
+    kbl(caption = "Model 1") %>%
+    kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+```{r}
+tidy(model2)
+```
+
+```{r}
+modelsummary(list(model1, model2))
+```
+
+```{r}
+ggplot(comunas, aes(x = factor(Treatment), y = Change_N)) +
+  stat_summary(geom = "pointrange", size = 1, color = "red",
+               fun.data = "mean_se", fun.args = list(mult = 1.96))
+```
+
+```{r}
+ggplot(comunas, aes(x = factor(Treatment), y = Change_N)) +
+  stat_summary(geom = "pointrange", size = 1, color = "red",
+               fun.data = "mean_se", fun.args = list(mult = 1.96)) +
+  facet_wrap(~Gama) +
+  labs(title = "Model 1 - medium effect based on income", x = "Treatment", y = "Mean Change in N")
+```
+
+```{r}
+ggplot(comunas, aes(x = factor(Treatment), y = Change_N)) +
+  stat_summary(geom = "pointrange", size = 1, color = "red",
+               fun.data = "mean_se", fun.args = list(mult = 1.96)) +
+  facet_wrap(~Tipo)
+```
+
+
+
+```{r}
+plot_data <- comunas %>%
+  mutate(Treatment = factor(Treatment)) %>%
+  group_by(Gama, Treatment) %>%
+  summarize(mean_change = mean(Change_N),
+            se_change = sd(Change_N) / sqrt(n()),
+            upper = mean_change + (-1.96 * se_change),
+            lower = mean_change + (1.96 * se_change))
+            
+```
+
+
+```{r}
+plot_data_2 <- comunas %>%
+  mutate(Treatment = factor(Treatment)) %>%
+  group_by() %>%
+  summarize(mean_change = mean(Change_N),
+            se_change = sd(Change_N) / sqrt(n()),
+            upper = mean_change + (-1.96 * se_change),
+            lower = mean_change + (1.96 * se_change))
+            
+```
+
+
+```{r}
+ggplot(plot_data_2, aes(x = Treatment, y = mean_change)) +
+  geom_pointrange(aes(ymin = lower, ymax = upper),
+                  color = "darkgreen", size = 1) +
+  facet_wrap(~ Gama)
+```
+
+
+```{r}
+ggplot(plot_data_2, aes(x = Treatment, y = mean_change)) +
+  geom_pointrange(aes(ymin = lower, ymax = upper),
+                  color = "darkgreen", size = 1)
+```
+
+```{r}
+plot_bonits <- ggplot(plot_data, aes(x = Treatment, y = mean_change, color = Gama)) +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1) +
+  geom_line(aes(group = Gama))
+```
+
+```{r}
+plot_bonits
+```
+
+
+
+```{r}
+ggplot(plot_data2, aes(x = Treatment, y = mean_change, color = Treatment)) +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1) +
+  geom_line(aes(group = mean_change))
+```
+
+
+```{r}
+plot_data3 <- comunas %>%
+  mutate(Treatment = factor(Treatment)) %>%
+  group_by(Treatment) %>%
+  summarize(mean_change = mean(Change_N),
+            se_change = sd(Change_N) / sqrt(n()),
+            upper = mean_change + (-1.96 * se_change),
+            lower = mean_change + (1.96 * se_change))
+            
+```
+
+```{r}
+plot_data3
+```
+
+
+
+
+
